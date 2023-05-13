@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">YaMarkers</string>
+    <string name="map_fragment_title">Yandex Map</string>
+    <string name="my_location">My location</string>
+    <string name="zoom_out">Zoom out</string>
+    <string name="zoom_in">Zoom in</string>
 </resources>
