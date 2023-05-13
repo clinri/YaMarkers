@@ -13,19 +13,65 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.InputListener
+import com.yandex.mapkit.map.Map
+import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.user_location.UserLocationLayer
+import com.yandex.mapkit.user_location.UserLocationObjectListener
+import com.yandex.mapkit.user_location.UserLocationView
+import com.yandex.runtime.ui_view.ViewProvider
+import kotlinx.coroutines.flow.collectLatest
 import ru.netology.yamarkers.R
 import ru.netology.yamarkers.databinding.MapFragmentBinding
+import ru.netology.yamarkers.databinding.PlaceBinding
+import ru.netology.yamarkers.viewmodel.MapViewModel
 
 class MapFragment : Fragment() {
 
+    companion object {
+        const val LAT_KEY = "LAT_KEY"
+        const val LONG_KEY = "LONG_KEY"
+    }
+
     private var mapView: MapView? = null
     private lateinit var userLocation: UserLocationLayer
+    private val listener = object : InputListener {
+        override fun onMapTap(map: Map, point: Point) = Unit
+
+        override fun onMapLongTap(map: Map, point: Point) {
+            AddPlaceDialog.newInstance(point.latitude, point.longitude)
+                .show(childFragmentManager, null)
+        }
+    }
+
+    private val locationObjectListener = object : UserLocationObjectListener {
+        override fun onObjectAdded(view: UserLocationView) = Unit
+
+        override fun onObjectRemoved(view: UserLocationView) = Unit
+
+        override fun onObjectUpdated(view: UserLocationView, event: ObjectEvent) {
+            userLocation.cameraPosition()?.target?.let {
+                mapView?.map?.move(CameraPosition(it, 10F, 0F, 0F))
+            }
+            userLocation.setObjectListener(null)
+        }
+    }
+
+    private val viewModel by viewModels<MapViewModel>()
+
+    private val placeTapListener = MapObjectTapListener { mapObject, _ ->
+        viewModel.deletePlaceById(mapObject.userData as Long)
+        true
+    }
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -76,6 +122,47 @@ class MapFragment : Fragment() {
             ) {
                 userLocation.isVisible = true
                 userLocation.isHeadingEnabled = false
+            }
+            map.addInputListener(listener)
+
+            val collection = map.mapObjects.addCollection()
+            viewLifecycleOwner.lifecycle.coroutineScope.launchWhenStarted {
+                viewModel.places.collectLatest { places ->
+                    collection.clear()
+                    places.forEach { place ->
+                        val placeBinding = PlaceBinding.inflate(layoutInflater)
+                        placeBinding.title.text = place.name
+                        collection.addPlacemark(
+                            Point(place.lat, place.long),
+                            ViewProvider(placeBinding.root)
+                        ).apply {
+                            userData = place.id
+                        }
+                    }
+                }
+            }
+            collection.addTapListener(placeTapListener)
+
+            // Переход к точке на карте после клика на списке
+            val arguments = arguments
+            if (arguments != null &&
+                arguments.containsKey(LAT_KEY) &&
+                arguments.containsKey(LONG_KEY)
+            ) {
+                val cameraPosition = map.cameraPosition
+                map.move(
+                    CameraPosition(
+                        Point(arguments.getDouble(LAT_KEY), arguments.getDouble(LONG_KEY)),
+                        15F,
+                        cameraPosition.azimuth,
+                        cameraPosition.tilt,
+                    )
+                )
+                arguments.remove(LAT_KEY)
+                arguments.remove(LONG_KEY)
+            } else {
+                // При входе в приложение показываем текущее местоположение
+                userLocation.setObjectListener(locationObjectListener)
             }
         }
 

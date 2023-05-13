@@ -7,4 +7,8 @@
     <string name="need_permission">Location permission required</string>
     <string name="to_places">To saved places</string>
     <string name="empty">List of markers is empty</string>
+    <string name="enter_name">Enter name of place</string>
+    <string name="delete">Delete place</string>
+    <string name="edit">Edit place\'s name</string>
+    <string name="marker_of_place">marker of place</string>
 </resources>
