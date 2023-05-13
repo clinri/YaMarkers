@@ -4,11 +4,16 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.map.CameraPosition
@@ -99,6 +104,21 @@ class MapFragment : Fragment() {
         binding.location.setOnClickListener {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.map_menu, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+                if (menuItem.itemId == R.id.list) {
+                    findNavController().navigate(R.id.action_mapFragment_to_placesFragment)
+                    true
+                } else {
+                    false
+                }
+
+        }, viewLifecycleOwner)
 
         return binding.root
     }
