@@ -4,4 +4,5 @@
     <string name="my_location">My location</string>
     <string name="zoom_out">Zoom out</string>
     <string name="zoom_in">Zoom in</string>
+    <string name="need_permission">Location permission required</string>
 </resources>
