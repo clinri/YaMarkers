@@ -5,7 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.mapview.MapView
 import ru.netology.yamarkers.databinding.MapFragmentBinding
 
@@ -26,6 +28,27 @@ class MapFragment : Fragment() {
         val binding = MapFragmentBinding.inflate(inflater, container, false)
         mapView = binding.map
 
+        binding.plus.setOnClickListener {
+            binding.map.map.move(
+                CameraPosition(
+                    binding.map.map.cameraPosition.target,
+                    binding.map.map.cameraPosition.zoom + 1, 0.0f, 0.0f
+                ),
+                Animation(Animation.Type.SMOOTH, 0.3F),
+                null
+            )
+        }
+
+        binding.minus.setOnClickListener {
+            binding.map.map.move(
+                CameraPosition(
+                    binding.map.map.cameraPosition.target,
+                    binding.map.map.cameraPosition.zoom - 1, 0.0f, 0.0f
+                ),
+                Animation(Animation.Type.SMOOTH, 0.3F),
+                null,
+            )
+        }
 
         return binding.root
     }
